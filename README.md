@@ -38,7 +38,7 @@ curl -X POST http://localhost:3000/api/completition \
   -d '{"query": "what is the article about?"}'
 ```
 
-## How its working (appliaction layer)
+## How its working (application layer)
 
 ### Function: SaveParagraph
 
