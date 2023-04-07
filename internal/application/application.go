@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/Abraxas-365/ia-search/internal/domain/models"
@@ -60,7 +61,7 @@ func (a *application) GetGptResposeWithContext(ctx context.Context, question str
 	}
 
 	for _, result := range results {
-		if tokens >= 1500 {
+		if tokens > 1000 {
 			break
 		}
 		context = context + result.Content + "\n"
@@ -70,16 +71,16 @@ func (a *application) GetGptResposeWithContext(ctx context.Context, question str
 You are a very enthusiastic bibliotecarian who loves to help people! 
 Given the following sections, answer the question using only that information. 
 If you are unsure and the answer is not explicitly written in the documentation, 
-say "Sorry, I don't the aswer of that.
+say Sorry, I don't the aswer of that.
 
 		Context sextions: %s, 
 
-		Question: %s
-		
-		`, context, question)
+		Question: %s`, context, question)
 
+	fmt.Println(prompt)
 	completition, err := a.openApi.GetCompletion(prompt, 1500, 0.5, model)
 	if err != nil {
+		log.Println("error in getCompletion")
 		return "", err
 	}
 

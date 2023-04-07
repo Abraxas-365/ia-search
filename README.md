@@ -17,6 +17,7 @@ It also includes an API to interact with OpenAI's GPT-3 and text embeddings serv
 
 1. Put your OPEN IA KEY in the docker-compose.yml
 2. In main.go put the file you want to use
+3. At the moment we are usinig text-davinci-003 that only accept 2048 tokens, so we neet to tweek the config to match that pre requists
 
 ### Start Project
 
@@ -97,7 +98,7 @@ func (a *application) GetGptResposeWithContext(ctx context.Context, question str
 	context := ""
 	tokens := 0
 	for _, result := range results {
-		if tokens >= 1500 {
+		if tokens >= 2000 {
 			break
 		}
 		context = context + result.Content + "\n"
