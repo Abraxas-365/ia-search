@@ -62,16 +62,30 @@ func ReadWords(filePath string, wordChan chan<- string, errChan chan<- error) {
 
 func ParseWordsInChunks(wordChan <-chan string, chunkSize int, overlap int, chunksChan chan<- string, errChan chan<- error) {
 	var words []string
+	wordCount := 0
 
 	for word := range wordChan {
 		words = append(words, word)
+		wordCount++
 
-		if len(words) >= chunkSize {
-			chunk := strings.Replace(strings.Join(words[:chunkSize], " "), "\n", " ", -1)
-			chunk = strings.Replace(chunk, "\"", "''", -1)
-			chunksChan <- chunk
+		if wordCount >= chunkSize {
+			// Find the position of the last period in the last few words
+			lastPeriodIndex := -1
+			for i := len(words) - 1; i >= len(words)-overlap && i >= 0; i-- {
+				if strings.Contains(words[i], ".") {
+					lastPeriodIndex = i
+					break
+				}
+			}
 
-			words = words[chunkSize-overlap:]
+			if lastPeriodIndex != -1 {
+				chunk := strings.Replace(strings.Join(words[:lastPeriodIndex+1], " "), "\n", " ", -1)
+				chunk = strings.Replace(chunk, "\"", "''", -1)
+				chunksChan <- chunk
+
+				words = words[lastPeriodIndex+1:]
+				wordCount = len(words)
+			}
 		}
 	}
 
