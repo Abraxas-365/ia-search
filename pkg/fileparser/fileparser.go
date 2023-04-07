@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 func GetFileExtension(filename string) string {
@@ -36,47 +37,78 @@ func ParseTxtInChunks(filePath string, chunkSize int, overlap int) ([]string, er
 	var currentWord strings.Builder
 
 	reader := bufio.NewReader(file)
+	wordChan := make(chan string)
+	done := make(chan struct{})
+	errChan := make(chan error)
 
-	for {
-		b, err := reader.ReadByte()
+	go func() {
+		for {
+			b, err := reader.ReadByte()
 
-		if err == nil || err == io.EOF {
-			if b == ' ' || b == '\n' {
-				word := currentWord.String()
-				if len(word) > 0 {
-					words = append(words, word)
+			if err == nil || err == io.EOF {
+				if b == ' ' || b == '\n' {
+					word := currentWord.String()
+					if len(word) > 0 {
+						wordChan <- word
+					}
+					currentWord.Reset()
+				} else {
+					currentWord.WriteByte(b)
 				}
-				currentWord.Reset()
-			} else {
-				currentWord.WriteByte(b)
+
+				if err == io.EOF {
+					close(wordChan)
+					return
+				}
+			} else if err != nil {
+				errChan <- err
+				return
 			}
+		}
+	}()
 
-			// If EOF reached, break the loop after processing the last word
-			if err == io.EOF {
-				break
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case word, ok := <-wordChan:
+				if !ok {
+					done <- struct{}{}
+					return
+				}
+				words = append(words, word)
+
+				if len(words) >= chunkSize {
+					chunk := strings.Replace(strings.Join(words[:chunkSize], " "), "\n", " ", -1)
+					chunk = strings.Replace(chunk, "\"", "''", -1)
+					chunks = append(chunks, chunk)
+
+					words = words[chunkSize-overlap:]
+				}
+			case err := <-errChan:
+				done <- struct{}{}
+				errChan <- err
+				return
 			}
-		} else if err != nil {
-			return nil, err
 		}
+	}()
 
-		// Check if we have enough words for a chunk
-		if len(words) >= chunkSize {
-			// Replace newline characters with spaces and replace double quotes with two single quotes
-			chunk := strings.Replace(strings.Join(words[:chunkSize], " "), "\n", " ", -1)
-			chunk = strings.Replace(chunk, "\"", "''", -1)
-			chunks = append(chunks, chunk)
+	<-done
+	wg.Wait()
 
-			// Remove the first "chunkSize - overlap" words
-			words = words[chunkSize-overlap:]
-		}
-	}
-
-	// Add the remaining words as the last chunk
 	if len(words) > 0 {
 		chunk := strings.Replace(strings.Join(words, " "), "\n", " ", -1)
 		chunk = strings.Replace(chunk, "\"", "''", -1)
 		chunks = append(chunks, chunk)
 	}
 
-	return chunks, nil
+	select {
+	case err := <-errChan:
+		return nil, err
+	default:
+		return chunks, nil
+	}
 }
