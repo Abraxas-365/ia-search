@@ -1,7 +1,7 @@
 # Text Parser and Embedding API, GPT response
 
 This project creates an api to query with GPT on your files, TODO: pdf integration
-This project also provides a text parser that can parse different file types, such as .md, .doc, .docx, and .txt, into paragraphs.
+This project also provides a text parser, for parsing into chunks to be embbeded.
 It also includes an API to interact with OpenAI's GPT-3 and text embeddings services.
 
 ## Features

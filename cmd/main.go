@@ -35,7 +35,7 @@ func main() {
 
 	app := application.NewApplication(repo, openIaKEy)
 
-	if err := app.ParseFile(ctx, "example.txt"); err != nil {
+	if err := app.ParseFile(ctx, "example.txt", 1000, 200); err != nil {
 		log.Fatal(err)
 	}
 

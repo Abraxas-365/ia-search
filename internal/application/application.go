@@ -14,7 +14,7 @@ import (
 type Application interface {
 	SaveParagraph(ctx context.Context, paragraph string) error
 	GetGptResposeWithContext(ctx context.Context, question string, model string) (string, error)
-	ParseFile(ctx context.Context, path string) error
+	ParseFile(ctx context.Context, path string, chucks int, overlap int) error
 }
 
 type application struct {
@@ -86,8 +86,9 @@ say "Sorry, I don't the aswer of that.
 	return completition, nil
 }
 
-func (a *application) ParseFile(ctx context.Context, path string) error {
-	paragraphs, err := fileparser.ParseFile(path)
+func (a *application) ParseFile(ctx context.Context, path string, chucks int, overlap int) error {
+	paragraphs, err := fileparser.ParseTxtInChunks(path, chucks, overlap)
+	fmt.Println("Found", len(paragraphs))
 	if err != nil {
 		fmt.Println("Error:", err)
 		return err
