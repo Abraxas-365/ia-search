@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/Abraxas-365/ia-search/internal/domain/models"
@@ -84,7 +85,7 @@ say Sorry, I don't the aswer of that.
 		return "", err
 	}
 
-	return completition, nil
+	return strings.Trim(completition, "\n"), nil
 }
 
 func (a *application) ParseFile(ctx context.Context, path string, chucks int, overlap int) error {
