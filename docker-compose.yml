@@ -19,7 +19,7 @@ services:
     build: .
     environment:
       POSTGRES_URI: "db"
-      OPENIA_KEY: "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"
+      OPENIA_KEY: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     depends_on:
       - db
     ports:
