@@ -16,10 +16,10 @@ type CompletionResponse struct {
 	Model string `json:"model"`
 }
 
-func (c *Client) GetCompletion(prompt string, maxTokens int, temperature float32) (string, error) {
+func (c *Client) GetCompletion(prompt string, maxTokens int, temperature float32, model string) (string, error) {
 	apiURL := "https://api.openai.com/v1/completions"
 	data := map[string]interface{}{
-		"model":       "text-davinci-003",
+		"model":       model,
 		"prompt":      prompt,
 		"max_tokens":  maxTokens,
 		"temperature": temperature,

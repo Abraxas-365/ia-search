@@ -13,7 +13,7 @@ import (
 
 type Application interface {
 	SaveParagraph(ctx context.Context, paragraph string) error
-	GetGptResposeWithContext(ctx context.Context, question string) (string, error)
+	GetGptResposeWithContext(ctx context.Context, question string, model string) (string, error)
 	ParseFile(ctx context.Context, path string) error
 }
 
@@ -46,7 +46,7 @@ func (a *application) SaveParagraph(ctx context.Context, content string) error {
 	return nil
 }
 
-func (a *application) GetGptResposeWithContext(ctx context.Context, question string) (string, error) {
+func (a *application) GetGptResposeWithContext(ctx context.Context, question string, model string) (string, error) {
 	context := ""
 	tokens := 0
 	embedding, err := a.openApi.GetEmbedding(question)
@@ -78,7 +78,7 @@ say "Sorry, I don't the aswer of that.
 		
 		`, context, question)
 
-	completition, err := a.openApi.GetCompletion(prompt, 1500, 0.5)
+	completition, err := a.openApi.GetCompletion(prompt, 1500, 0.5, model)
 	if err != nil {
 		return "", err
 	}

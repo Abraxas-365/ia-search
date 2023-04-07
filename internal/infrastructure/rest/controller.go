@@ -15,7 +15,7 @@ func ControllerFactory(fiberApp *fiber.App, app application.Application) {
 		if err := c.BodyParser(&requestBody); err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err})
 		}
-		answer, err := app.GetGptResposeWithContext(c.Context(), requestBody.Query)
+		answer, err := app.GetGptResposeWithContext(c.Context(), requestBody.Query, "text-davinci-003")
 		if err != nil {
 
 			return c.Status(500).JSON(fiber.Map{"error": err})
