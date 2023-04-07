@@ -1,0 +1,40 @@
+version: "3"
+
+services:
+  db:
+    image: ankane/pgvector:latest
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    networks:
+      - search-ai
+    restart: always
+
+  app:
+    build: .
+    environment:
+      POSTGRES_URI: "db"
+      OPENIA_KEY: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    networks:
+      - search-ai
+    restart: always
+    entrypoint:
+      - dockerize
+      - -timeout
+      - 60s
+      - -wait
+      - tcp://db:5432
+    command: ./main
+
+networks:
+  search-ai:
+    driver: bridge
