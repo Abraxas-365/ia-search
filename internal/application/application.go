@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/Abraxas-365/ia-search/internal/domain/models"
 	"github.com/Abraxas-365/ia-search/internal/domain/ports"
@@ -86,19 +87,33 @@ say "Sorry, I don't the aswer of that.
 }
 
 func (a *application) ParseFile(ctx context.Context, path string) error {
-
 	paragraphs, err := fileparser.ParseFile(path)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return err
 	}
 
+	var wg sync.WaitGroup
+	errorChan := make(chan error, len(paragraphs))
+
 	for _, para := range paragraphs {
-		err := a.SaveParagraph(ctx, para)
-		if err != nil {
-			// log.Printf("Failed to save embedding for paragraph %d: %v", i+1, err)
-			return err
-		}
+		wg.Add(1)
+		go func(content string) {
+			defer wg.Done()
+			err := a.SaveParagraph(ctx, content)
+			if err != nil {
+				errorChan <- err
+			}
+		}(para)
 	}
+
+	wg.Wait()
+	close(errorChan)
+
+	if len(errorChan) > 0 {
+		// Return the first error encountered
+		return <-errorChan
+	}
+
 	return nil
 }

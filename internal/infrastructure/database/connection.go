@@ -4,30 +4,23 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-type SimilarParagraph struct {
-	ID       int64
-	Tokens   int
-	Content  string
-	Distance float64
-}
-
 type Connection struct {
-	Conn *pgx.Conn
+	Pool *pgxpool.Pool
 }
 
 func NewConnection(host string, port int, user string, password string, dbname string) (*Connection, error) {
 	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	conn, err := pgx.Connect(context.Background(), connString)
+	pool, err := pgxpool.Connect(context.Background(), connString)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Connection{Conn: conn}, nil
+	return &Connection{Pool: pool}, nil
 }
 
-func (c *Connection) Close(ctx context.Context) {
-	c.Conn.Close(ctx)
+func (c *Connection) Close() {
+	c.Pool.Close()
 }

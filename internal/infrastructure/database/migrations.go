@@ -4,13 +4,13 @@ import "context"
 
 func (c *Connection) RunMigrations(ctx context.Context) error {
 	// Create extension
-	_, err := c.Conn.Exec(ctx, "CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;")
+	_, err := c.Pool.Exec(ctx, "CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;")
 	if err != nil {
 		return err
 	}
 
 	// Create table
-	_, err = c.Conn.Exec(ctx, `
+	_, err = c.Pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS "public"."paragraph" (
 			id BIGSERIAL PRIMARY KEY,
 			content TEXT,

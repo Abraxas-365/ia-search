@@ -94,16 +94,36 @@ func parseTxt(filepath string) ([]string, error) {
 	return paragraphs, nil
 }
 
+func parseWrapper(filepath string, parseFunc func(string) ([]string, error), resultChan chan []string, errChan chan error) {
+	paragraphs, err := parseFunc(filepath)
+	if err != nil {
+		errChan <- err
+	} else {
+		resultChan <- paragraphs
+	}
+}
+
 // ParseFile takes a file path as an argument and returns an array of parsed paragraphs.
+
 func ParseFile(filepath string) ([]string, error) {
+	resultChan := make(chan []string)
+	errChan := make(chan error)
+
 	switch ext := getFileExtension(filepath); ext {
 	case ".md":
-		return parseMarkdown(filepath)
+		go parseWrapper(filepath, parseMarkdown, resultChan, errChan)
 	case ".doc", ".docx":
-		return parseDoc(filepath)
+		go parseWrapper(filepath, parseDoc, resultChan, errChan)
 	case ".txt":
-		return parseTxt(filepath)
+		go parseWrapper(filepath, parseTxt, resultChan, errChan)
 	default:
 		return nil, errors.New("unsupported file type")
+	}
+
+	select {
+	case paragraphs := <-resultChan:
+		return paragraphs, nil
+	case err := <-errChan:
+		return nil, err
 	}
 }

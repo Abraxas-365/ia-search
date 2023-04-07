@@ -5,15 +5,15 @@ import (
 
 	"github.com/Abraxas-365/ia-search/internal/domain/models"
 	"github.com/Abraxas-365/ia-search/internal/domain/ports"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pgvector/pgvector-go"
 )
 
 type paragraphRepository struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func NewParagraphRepository(db *pgx.Conn) ports.ParagraphRepository {
+func NewParagraphRepository(db *pgxpool.Pool) ports.ParagraphRepository {
 	return &paragraphRepository{db: db}
 }
 
@@ -56,6 +56,7 @@ func (r *paragraphRepository) GetMostSimilarVectors(ctx context.Context, embeddi
 
 	return similarParagraphs, nil
 }
+
 func (r *paragraphRepository) ContentExists(ctx context.Context, content string) (bool, error) {
 	var exists bool
 	query := `SELECT EXISTS(SELECT 1 FROM "public"."paragraph" WHERE content = $1)`

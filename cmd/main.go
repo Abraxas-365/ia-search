@@ -24,14 +24,14 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Println("Connected to database")
-	defer conn.Close(context.Background())
+	defer conn.Close()
 
 	err = conn.RunMigrations(context.Background())
 	if err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	repo := repository.NewParagraphRepository(conn.Conn)
+	repo := repository.NewParagraphRepository(conn.Pool)
 
 	app := application.NewApplication(repo, openIaKEy)
 
