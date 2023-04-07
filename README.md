@@ -38,6 +38,86 @@ curl -X POST http://localhost:3000/api/completition \
   -d '{"query": "what is the article about?"}'
 ```
 
+## How its working (appliaction layer)
+
+`Function: SaveParagraph`
+The `SaveParagraph` method first checks if the content already exists in the database by calling the `ContentExists` method from the `repo`. If the content exists, it returns immediately, not saving the paragraph again.
+
+If the content does not exist, the method retrieves the paragraph's embedding from the OpenAI API using the `GetEmbedding` method. Then, it creates a new `models.Paragraph` instance with the content and its embedding, and saves the paragraph in the repository using the `SaveParagraph` method.
+
+```go
+func (a *application) SaveParagraph(ctx context.Context, content string) error {
+	// Check if the content already exists in the database
+	exists, err := a.repo.ContentExists(ctx, content)
+	if err != nil {
+		return err
+	}
+
+	// If the content doesn't exist, save the paragraph with its embedding
+	if !exists {
+		embedding, err := a.openApi.GetEmbedding(content)
+		if err != nil {
+			return err
+		}
+		paragraph := models.NewParagraph(content, embedding)
+		return a.repo.SaveParagraph(ctx, &paragraph)
+	}
+	return nil
+}
+```
+
+`Function: GetGptResposeWithContext`
+The `GetGptResposeWithContext` method first retrieves the embedding for the given question using the OpenAI API. It then finds the most similar paragraphs to the question by calling the `GetMostSimilarVectors` method from the `repo`.
+
+It builds a context string by concatenating the content of the most similar paragraphs, limiting the total tokens to 1500. The context string and the question are then formatted into a GPT-3 prompt. Finally, it calls the OpenAI API to get a completion based on the generated prompt, using the `GetCompletion` method.
+
+```go
+func (a *application) GetGptResposeWithContext(ctx context.Context, question string, model string) (string, error) {
+	// Get the embedding for the question
+	embedding, err := a.openApi.GetEmbedding(question)
+	if err != nil {
+		return "", err
+	}
+
+	// Find the most similar paragraphs
+	results, err := a.repo.GetMostSimilarVectors(ctx, embedding, 5)
+	if err != nil {
+		return "", err
+	}
+
+	// Build the context string
+	context := ""
+	tokens := 0
+	for _, result := range results {
+		if tokens >= 1500 {
+			break
+		}
+		context = context + result.Content + "\n"
+		tokens = tokens + result.TokenCount
+	}
+
+	// Format the GPT-3 prompt
+	prompt := fmt.Sprintf(`
+		// ...
+		Context sextions: %s,
+		Question: %s
+		`, context, question)
+
+	// Get the completion from the OpenAI API
+	completion, err := a.openApi.GetCompletion(prompt, 1500, 0.5, model)
+	if err != nil {
+		return "", err
+	}
+
+	return completion, nil
+}
+```
+
+`Function: ParseFile`
+The `ParseFile` method first parses the given file into paragraphs using the `fileparser.ParseFile` function. Then, it creates a `sync.WaitGroup` and an errorChan to manage the concurrent processing of paragraphs.
+
+For each paragraph, it spawns a new goroutine and calls the `SaveParagraph` method. Once all the goroutines have completed their work, it waits for them using `wg.Wait()`. If there were any errors during the concurrent processing of paragraphs, it returns the first error encountered.
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
