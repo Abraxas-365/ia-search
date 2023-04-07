@@ -38,6 +38,12 @@ curl -X POST http://localhost:3000/api/completition \
   -d '{"query": "what is the article about?"}'
 ```
 
+## How its working (parser)
+
+### Function: ParseTxtInChunks
+
+`ParseTxtInChunks` function reads a text file located at the given filePath and splits its content into chunks of chunkSize words with an overlap number of words between each chunk. It returns a slice of strings, where each string represents a chunk of text.
+
 ## How its working (application layer)
 
 ### Function: SaveParagraph
@@ -114,12 +120,6 @@ func (a *application) GetGptResposeWithContext(ctx context.Context, question str
 	return completion, nil
 }
 ```
-
-### Function: ParseFile
-
-The `ParseFile` method first parses the given file into paragraphs using the `fileparser.ParseFile` function. Then, it creates a `sync.WaitGroup` and an errorChan to manage the concurrent processing of paragraphs.
-
-For each paragraph, it spawns a new goroutine and calls the `SaveParagraph` method. Once all the goroutines have completed their work, it waits for them using `wg.Wait()`. If there were any errors during the concurrent processing of paragraphs, it returns the first error encountered.
 
 ## Contributing
 
