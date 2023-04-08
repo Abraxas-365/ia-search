@@ -70,6 +70,7 @@ func (a *application) GetGptResposeWithContext(ctx context.Context, question str
 	}
 	prompt := fmt.Sprintf(`
 		Answer with the text in the context, you can use additional info that you have if it helps to complete the info in the context for the question.
+		If the Question doest have any realtion to the Context or if you dont know the answer , tell I cant help you with that.
 
 		Context sextions: %s, 
 
