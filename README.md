@@ -6,8 +6,8 @@ It also includes an API to interact with OpenAI's GPT-3 and text embeddings serv
 
 ## Features
 
+- Suport for text-davinci-003
 - Query you files using embedings and answer your questions using gpt
-- Parse various file formats into paragraphs
 - Connect to OpenAI API for embeddings and completions
 - Store paragraph embeddings in a PostgreSQL database using the pgvector extension
 - Find most similar paragraphs based on embeddings
