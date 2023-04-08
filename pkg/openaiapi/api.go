@@ -16,6 +16,27 @@ type CompletionResponse struct {
 	Model string `json:"model"`
 }
 
+type ChatMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type ChatCompletionResponse struct {
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	Created int64  `json:"created"`
+	Choices []struct {
+		Index        int         `json:"index"`
+		Message      ChatMessage `json:"message"`
+		FinishReason string      `json:"finish_reason"`
+	} `json:"choices"`
+	Usage struct {
+		PromptTokens     int `json:"prompt_tokens"`
+		CompletionTokens int `json:"completion_tokens"`
+		TotalTokens      int `json:"total_tokens"`
+	} `json:"usage"`
+}
+
 func (c *Client) GetCompletion(prompt string, maxTokens int, temperature float32, model string) (string, error) {
 	apiURL := "https://api.openai.com/v1/completions"
 	data := map[string]interface{}{
@@ -107,4 +128,52 @@ func (c *Client) GetEmbedding(paragraph string) ([]float32, error) {
 	}
 
 	return embeddingResponse.Data[0].Embedding, nil
+}
+
+//Its is develop
+func (c *Client) GetChatCompletion(messages string, temperature float32, model string) (string, error) {
+	apiURL := "https://api.openai.com/v1/chat/completions"
+	data := map[string]interface{}{
+		"model": model,
+		"messages": ChatMessage{
+			Role:    "user",
+			Content: messages,
+		},
+		// "temperature": temperature,
+
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.New("API request failed")
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var chatCompletionResponse ChatCompletionResponse
+	err = json.Unmarshal(body, &chatCompletionResponse)
+	if err != nil {
+		return "", err
+	}
+
+	return chatCompletionResponse.Choices[0].Message.Content, nil
 }

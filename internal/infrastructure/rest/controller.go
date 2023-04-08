@@ -17,7 +17,7 @@ func ControllerFactory(fiberApp *fiber.App, app application.Application) {
 		if err := c.BodyParser(&requestBody); err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err})
 		}
-		answer, err := app.GetGptResposeWithContext(context.Background(), requestBody.Query, "text-davinci-003")
+		answer, err := app.GetGptResposeWithContext(context.Background(), requestBody.Query, 1000, "text-davinci-003", false)
 		if err != nil {
 
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
@@ -27,4 +27,22 @@ func ControllerFactory(fiberApp *fiber.App, app application.Application) {
 
 	})
 
+	//on develop dont use
+	r.Get("/completition/chat", func(c *fiber.Ctx) error {
+		var requestBody struct {
+			Query string `json:"query"`
+		}
+
+		if err := c.BodyParser(&requestBody); err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err})
+		}
+		answer, err := app.GetGptResposeWithContext(context.Background(), requestBody.Query, 1000, "gpt-3.5-turbo", true)
+		if err != nil {
+
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		return c.Status(200).JSON(fiber.Map{"answer": answer})
+
+	})
 }

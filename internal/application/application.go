@@ -15,7 +15,7 @@ import (
 
 type Application interface {
 	SaveParagraph(ctx context.Context, paragraph string) error
-	GetGptResposeWithContext(ctx context.Context, question string, model string) (string, error)
+	GetGptResposeWithContext(ctx context.Context, question string, contextTokenSize int, model string, chat bool) (string, error)
 	ParseFile(ctx context.Context, path string, chucks int, overlap int) error
 }
 
@@ -48,7 +48,7 @@ func (a *application) SaveParagraph(ctx context.Context, content string) error {
 	return nil
 }
 
-func (a *application) GetGptResposeWithContext(ctx context.Context, question string, model string) (string, error) {
+func (a *application) GetGptResposeWithContext(ctx context.Context, question string, contextTokenSize int, model string, chat bool) (string, error) {
 	context := ""
 	tokens := 0
 	embedding, err := a.openApi.GetEmbedding(question)
@@ -62,27 +62,34 @@ func (a *application) GetGptResposeWithContext(ctx context.Context, question str
 	}
 
 	for _, result := range results {
-		if tokens > 1000 {
+		if tokens > contextTokenSize {
 			break
 		}
 		context = context + result.Content + "\n"
 		tokens = tokens + result.TokenCount
 	}
 	prompt := fmt.Sprintf(`
-You are a very enthusiastic bibliotecarian who loves to help people! 
-Given the following sections, answer the question using only that information. 
-If you are unsure and the answer is not explicitly written in the documentation, 
-say Sorry, I don't the aswer of that.
+		Answer with the text in the context, you can use additional info that you have if it helps to complete the info in the context for the question.
 
 		Context sextions: %s, 
 
-		Question: %s`, context, question)
+		Question: %s
 
-	fmt.Println(prompt)
-	completition, err := a.openApi.GetCompletion(prompt, 1500, 0.5, model)
-	if err != nil {
+		Give just the aswer
+
+		`, context, question)
+
+	completition := ""
+	if chat {
+		completition, err = a.openApi.GetChatCompletion(completition, 0.4, model)
 		log.Println("error in getCompletion")
 		return "", err
+	} else {
+		completition, err = a.openApi.GetCompletion(prompt, 1500, 0.4, model)
+		if err != nil {
+			log.Println("error in getCompletion")
+			return "", err
+		}
 	}
 
 	return strings.Trim(completition, "\n"), nil
